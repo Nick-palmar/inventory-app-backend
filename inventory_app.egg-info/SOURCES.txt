@@ -1,0 +1,8 @@
+README.md
+setup.py
+inventory_api/__init__.py
+inventory_app.egg-info/PKG-INFO
+inventory_app.egg-info/SOURCES.txt
+inventory_app.egg-info/dependency_links.txt
+inventory_app.egg-info/requires.txt
+inventory_app.egg-info/top_level.txt

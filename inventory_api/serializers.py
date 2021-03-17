@@ -8,4 +8,4 @@ ma = Marshmallow(app)
 
 class UserSchema(ma.Schema):
     class Meta:
-        fields = ('user_id, user_nm, email')
+        fields = ('user_id', 'user_nm', 'email')

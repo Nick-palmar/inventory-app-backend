@@ -5,7 +5,7 @@ from flask import request, jsonify
 from sqlalchemy.orm import Session
 from flask_cors import CORS, cross_origin
 
-from serializers import UserSchema
+from .serializers import UserSchema
 
 # CORS(app, support_credentials=True)
 Base = automap_base()
@@ -29,12 +29,12 @@ def index():
 
 @app.route('/api/addUser', methods=['POST'])
 def add_user():
-    user_name = request.form.get('user_name')
-    email = request.form.get('email')
+    user_name = request.form['user_name']
+    email = request.form['email']
 
     if user_name != None and email != None:
         try:
-            user = User(user_name=user_name, email=email)
+            user = User(user_nm=user_name, email=email)
             session.add(user)
             session.commit()
             user_schema = UserSchema()
@@ -43,4 +43,4 @@ def add_user():
         except Exception as e:
             return jsonify({'Error': e})
     else:
-        return jsonify({'Error': "Blank username or email"})
+        return jsonify({'Error': f"Username was {user_name} and email was {email}"})

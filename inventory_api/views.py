@@ -42,7 +42,7 @@ def validate_entire_entry(object, *all_fields, **entered_values) -> bool:
         True if the exact item exist, false otherwise
     """
     for col in all_fields:
-        if object.col != entered_values[col]:
+        if getattr(object, col) != entered_values[col]:
             return False 
     return True
 

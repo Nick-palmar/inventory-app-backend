@@ -28,6 +28,7 @@ metadata = MetaData(engine)
 # create all schemas 
 user_schema = UserSchema()
 inventory_schema = InventorySchema()
+multiple_inventory_schema = InventorySchema(many=True)
 
 @app.route('/')
 def index():
@@ -67,7 +68,7 @@ def sign_up():
         if 'email' not in session:
             session['user_name'] = user.user_nm
             session['email'] = user.email 
-            session['user_id'] = user.user_id
+            session['user_id'] = str(user.user_id)
         
         return jsonify({'Already Exists': f'{user.email} already exists in db'}), 200
 
@@ -81,14 +82,14 @@ def sign_up():
             serialized_user = user_schema.dump(user)
             session['user_name'] = user.user_nm
             session['email'] = user.email 
-            session['user_id'] = user.user_id
+            session['user_id'] = str(user.user_id)
             return jsonify(serialized_user), 201
         except Exception as e:
             # error because email is already taken
             db_session.rollback()
             return jsonify({'Bad Request': 'Email already exists!'}), 400
     else:
-        return jsonify({'Bad Request': f"User name or email were none"}), 400
+        return jsonify({'Bad Request': "User name or email were none"}), 400
 
 @app.route('/api/sign-in', methods=['POST'])
 def sign_in():
@@ -101,7 +102,8 @@ def sign_in():
             serialized_user = user_schema.dump(db_user)
             session['user_name'] = db_user.user_nm
             session['email'] = db_user.email 
-            session['user_id'] = db_user.user_id
+            session['user_id'] = str(db_user.user_id)
+            print(type(session['user_id']))
             return jsonify(serialized_user), 200
         else:
             return jsonify({'Bad Request': 'Email DNE'}), 404
@@ -136,8 +138,9 @@ def get_all_users():
 def create_inventory():
     current_user_id = request.form.get('user_id')
     inventory_name = request.form.get('inventory_name')
+    # print(session.get('user_id'), current_user_id)
 
-    if current_user_id != None:
+    if current_user_id != None and session.get('user_id') == current_user_id and inventory_name != None and inventory_name != "":
         # check if the user exists in the db Session 
         user = db_session.query(User).filter(User.user_id == current_user_id).first()
         # check that the inventory with the same name is not being created
@@ -160,10 +163,34 @@ def create_inventory():
             elif user == None:
                 return jsonify({'Bad Request': 'User Id was not found'}), 404
             else:
-                return jsonify({'Bad Request': 'Inventory already exists'}), 400
+                return jsonify({'Already Exists': 'Inventory already exists'}), 200
 
     else:
-        return jsonify({'Bad Request': 'User Id DNE'}), 404
+        if current_user_id == None:
+            return jsonify({'Bad Request': 'User Id DNE'}), 404
+        elif inventory_name == None or inventory_name == "":
+            return jsonify({'Bad Request': 'Inventory Name was not given'}), 400
+        else:
+            return jsonify({'Bad Request': 'This user id was not in session'}), 403
+
+
+@app.route('/api/get-inventories', methods=['GET'])
+def get_user_inventories():
+    user_id = request.args.get('user_id')
+    
+    if user_id != None and session.get('user_id') == user_id:
+        user_inventories = db_session.query(Inventory).filter(Inventory.user_id == user_id).all()
+
+        if user_inventories != None:
+            serialized_inventories = multiple_inventory_schema.dump(user_inventories)
+            return jsonify(serialized_inventories), 200
+        else:
+            return jsonify({'Not found': 'No inventories found'}), 200
+    else:
+        if user_id == None:
+            return jsonify({'Bad Request': 'No User ID passed'}), 400
+        else:
+            return jsonify({'Bad Request': 'User not in session'}), 403
 
 
 

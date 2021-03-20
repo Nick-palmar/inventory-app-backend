@@ -1,8 +1,9 @@
-DROP TABLE IF EXISTS Users
-DROP TABLE IF EXISTS Inventory
-DROP TABLE IF EXISTS Category 
-DROP TABLE IF EXISTS Product
-DROP TABLE IF EXISTS Attribute
+-- drop with backwards order due to foreign key constraints
+DROP TABLE IF EXISTS Attribute;
+DROP TABLE IF EXISTS Product;
+DROP TABLE IF EXISTS Category;
+DROP TABLE IF EXISTS Inventory;
+DROP TABLE IF EXISTS Users;
 
 -- create the tables
 
@@ -16,14 +17,14 @@ CREATE TABLE Inventory (
     inventory_id BIGSERIAL PRIMARY KEY,
     user_id INT REFERENCES Users (user_id),
     inventory_nm VARCHAR(30) NOT NULL,
-    created_at TIMESTAMP NOT NULL
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE Category (
     category_id BIGSERIAL PRIMARY KEY,
     inventory_id INT REFERENCES Inventory (inventory_id),
     category_nm VARCHAR(30) NOT NULL,
-    created_at TIMESTAMP NOT NULL
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE Product (
@@ -34,7 +35,7 @@ CREATE TABLE Product (
     quantity INT NOT NULL,
     last_addition TIMESTAMP NOT NULL,
     last_removal TIMESTAMP NOT NULL,
-    created_at TIMESTAMP NOT NULL
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE Attribute (

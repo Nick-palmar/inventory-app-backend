@@ -130,5 +130,19 @@ def get_all_users():
         print(all_users)
     
     return jsonify(return_dict), 200
+
+@app.route('/api/add-inventory', methods=['POST'])
+def create_inventory():
+    current_user_id = request.form.get('user_id')
+
+    if current_user != None:
+        # check if the user exists in the db Session
+        if db_session.query(User).filter(User.user_id == current_user_id).first() != None:
+            
+    else:
+        return jsonify({'Bad Request': 'User Id for inventory was none'}), 404
+
     
+
+
 

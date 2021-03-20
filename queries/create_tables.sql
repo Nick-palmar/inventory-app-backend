@@ -33,8 +33,8 @@ CREATE TABLE Product (
     product_nm VARCHAR(80) NOT NULL,
     product_type VARCHAR(50) NOT NULL,
     quantity INT NOT NULL,
-    last_addition TIMESTAMP NOT NULL,
-    last_removal TIMESTAMP NOT NULL,
+    last_addition TIMESTAMP,
+    last_removal TIMESTAMP,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

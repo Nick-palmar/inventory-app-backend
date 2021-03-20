@@ -1,7 +1,8 @@
 from inventory_api import app, engine
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy import *
-from flask import request, jsonify, session, Response
+from flask import request, jsonify, Response, session
+# print(type(session))
 from sqlalchemy.orm import Session
 from flask_cors import CORS, cross_origin
 
@@ -20,7 +21,8 @@ Category  = Base.classes.category
 Product = Base.classes.product
 Attribute = Base.classes.attribute
 
-session = Session(engine)
+db_session = Session(engine)
+# print(type(session))
 metadata = MetaData(engine)
 
 # create all schemas 
@@ -50,62 +52,83 @@ def validate_entire_entry(object, *all_fields, **entered_values) -> bool:
 def sign_up():
     user_name = request.form['user_name']
     email = request.form['email']
+    print(email)
 
     # make sure that the user DNE
-    user = User.query.filter_by(email=email).first()
-    user_exists = validate_entire_entry(user, *['user_name', 'email'], user_name=user_name, email=email)
+    user = db_session.query(User).filter(User.email == email).first()
+    if user:
+        user_exists = validate_entire_entry(user, *['user_nm', 'email'], user_nm=user_name, email=email)
+    else:
+        user_exists = False
 
     # check if the current user is a valid user
     if user_exists:
         if 'email' not in session:
-            session['user_name'] = user.user_name
+            session['user_name'] = user.user_nm
             session['email'] = user.email 
             session['user_id'] = user.user_id
         
-        return jsonify({'Already Exists': f'{session['email']} already exists in db'}), 200
+        return jsonify({'Already Exists': f'{user.email} already exists in db'}), 200
 
     # user is either invalid or does not yet exist
     if user_name != None and email != None:
         try:
             # try to create the user and add it
             user = User(user_nm=user_name, email=email)
-            session.add(user)
-            session.commit()
+            db_session.add(user)
+            db_session.commit()
             serialized_user = user_schema.dump(user)
+            session['user_name'] = user.user_nm
+            session['email'] = user.email 
+            session['user_id'] = user.user_id
             return jsonify(serialized_user), 201
         except Exception as e:
             # error because email is already taken
-            return jsonify({'Error': e}), 400
+            db_session.rollback()
+            return jsonify({'Bad Request': 'Email already exists!'}), 400
     else:
         return jsonify({'Bad Request': f"User name or email were none"}), 400
 
-# @app.route('/api/sign-in', methods=['POST'])
-# def sign_in():
-#     user_name = request.form['user_name']
-#     email = request.form['email']
+@app.route('/api/sign-in', methods=['POST'])
+def sign_in():
+    email = request.form['email']
 
-#     if user_name != None and email != None:
-#         try:
-#             user = User(user_nm=user_name, email=email)
-#             session.add(user)
-#             session.commit()
-#             serialized_user = user_schema.dump(user)
-#             return jsonify(serialized_user)
-#         except Exception as e:
-#             return jsonify({'Error': e})
-#     else:
-#         return jsonify({'Error': f"Username was {user_name} and email was {email}"}), 201
+    if email != None:
+        # check if the email exists (ignore the session data; in session will check for this)
+        db_user = db_session.query(User).filter(User.email == email).first()
+        if db_user != None:
+            serialized_user = user_schema.dump(db_user)
+            session['user_name'] = user.user_nm
+            session['email'] = user.email 
+            session['user_id'] = user.user_id
+            return jsonify(serialized_user), 200
+        else:
+            return jsonify({'Bad Request': 'Email DNE'}), 404
+    else:
+        return jsonify({'Bad Request': "Email was none"}), 404
 
 @app.route('/api/in-session', methods=['GET'])
 def check_user_session():
     email = request.args.get('email')
-    # check if the user is currently in a session by checking for unique emails
-    if 'email' not in session:
+    print(session.get('email'))
+    # check if the user is currently in a session by checking for unique emails in the session
+    if session.get('email') != email:
         return jsonify({'Not in session': 'Leave at home page'}), 404
     else:
         # user is in the session, return all user info
-        user = User.query.filter_by(email=email).first()
+        user = db_session.query(User).filter(User.email == email).first()
         serialized_user = user_schema.dump(user)
         return jsonify(serialized_user), 200
 
+@app.route('/api/view-all', methods=['GET'])
+def get_all_users():
+    all_users = db_session.query(User).all()
+    return_dict = {}
+
+    for i in range(len(all_users)):
+        return_dict[f'user_{i}'] = [all_users[i].user_id, all_users[i].user_nm, all_users[i].email]
+        print(all_users)
+    
+    return jsonify(return_dict), 200
+    
 

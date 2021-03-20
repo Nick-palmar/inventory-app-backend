@@ -99,9 +99,9 @@ def sign_in():
         db_user = db_session.query(User).filter(User.email == email).first()
         if db_user != None:
             serialized_user = user_schema.dump(db_user)
-            session['user_name'] = user.user_nm
-            session['email'] = user.email 
-            session['user_id'] = user.user_id
+            session['user_name'] = db_user.user_nm
+            session['email'] = db_user.email 
+            session['user_id'] = db_user.user_id
             return jsonify(serialized_user), 200
         else:
             return jsonify({'Bad Request': 'Email DNE'}), 404
@@ -121,38 +121,39 @@ def check_user_session():
         serialized_user = user_schema.dump(user)
         return jsonify(serialized_user), 200
 
-@app.route('/api/view-all', methods=['GET'])
+@app.route('/api/view-all-users', methods=['GET'])
 def get_all_users():
     all_users = db_session.query(User).all()
     return_dict = {}
 
     for i in range(len(all_users)):
         return_dict[f'user_{i}'] = [all_users[i].user_id, all_users[i].user_nm, all_users[i].email]
-        print(all_users)
+        # print(all_users)
     
-    return jsonify(return_dict), 200
+    return jsonify(dict(sorted(return_dict.items()))), 200
 
 @app.route('/api/add-inventory', methods=['POST'])
 def create_inventory():
     current_user_id = request.form.get('user_id')
     inventory_name = request.form.get('inventory_name')
 
-    if current_user != None:
+    if current_user_id != None:
         # check if the user exists in the db Session 
         user = db_session.query(User).filter(User.user_id == current_user_id).first()
         # check that the inventory with the same name is not being created
-        inventory = db_session.query(Inventory).filter(Inventory.inventory_nm == inventory_name).first()
+        inventory = db_session.query(Inventory).filter(and_(Inventory.inventory_nm == inventory_name, Inventory.user_id == current_user_id)).first()
         if user != None and inventory == None:
             try:
                 inventory = Inventory(user_id=current_user_id, inventory_nm=inventory_name)
                 db_session.add(inventory)
                 db_session.commit()
-                # continue work here 
+                serialized_inventory = inventory_schema.dump(inventory)
+                return jsonify(serialized_inventory), 201
 
             except:
                 # invalid session addition
                 db_session.rollback()
-                return jsonify({'Bad Request': 'User Id DNE'}), 404
+                return jsonify({'Bad Request': 'Error in creating inventory'}), 400
         else:
             if user == None and inventory != None:
                 return jsonify({'Bad Request': 'User Id and inventory were invalid'}), 400
@@ -162,7 +163,7 @@ def create_inventory():
                 return jsonify({'Bad Request': 'Inventory already exists'}), 400
 
     else:
-        return jsonify({'Bad Request': 'User Id DNE found'}), 404
+        return jsonify({'Bad Request': 'User Id DNE'}), 404
 
 
 

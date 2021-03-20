@@ -6,7 +6,7 @@ from flask import request, jsonify, Response, session
 from sqlalchemy.orm import Session
 from flask_cors import CORS, cross_origin
 
-from .serializers import UserSchema
+from .serializers import UserSchema, InventorySchema
 
 # CORS(app, support_credentials=True)
 Base = automap_base()
@@ -27,6 +27,7 @@ metadata = MetaData(engine)
 
 # create all schemas 
 user_schema = UserSchema()
+inventory_schema = InventorySchema()
 
 @app.route('/')
 def index():
@@ -134,13 +135,36 @@ def get_all_users():
 @app.route('/api/add-inventory', methods=['POST'])
 def create_inventory():
     current_user_id = request.form.get('user_id')
+    inventory_name = request.form.get('inventory_name')
 
     if current_user != None:
-        # check if the user exists in the db Session
-        if db_session.query(User).filter(User.user_id == current_user_id).first() != None:
-            
+        # check if the user exists in the db Session 
+        user = db_session.query(User).filter(User.user_id == current_user_id).first()
+        # check that the inventory with the same name is not being created
+        inventory = db_session.query(Inventory).filter(Inventory.inventory_nm == inventory_name).first()
+        if user != None and inventory == None:
+            try:
+                inventory = Inventory(user_id=current_user_id, inventory_nm=inventory_name)
+                db_session.add(inventory)
+                db_session.commit()
+                # continue work here 
+
+            except:
+                # invalid session addition
+                db_session.rollback()
+                return jsonify({'Bad Request': 'User Id DNE'}), 404
+        else:
+            if user == None and inventory != None:
+                return jsonify({'Bad Request': 'User Id and inventory were invalid'}), 400
+            elif user == None:
+                return jsonify({'Bad Request': 'User Id was not found'}), 404
+            else:
+                return jsonify({'Bad Request': 'Inventory already exists'}), 400
+
     else:
-        return jsonify({'Bad Request': 'User Id for inventory was none'}), 404
+        return jsonify({'Bad Request': 'User Id DNE found'}), 404
+
+
 
     
 

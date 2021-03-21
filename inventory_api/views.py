@@ -115,7 +115,7 @@ def check_user_session():
     email = request.args.get('email')
     print(session.get('email'))
     # check if the user is currently in a session by checking for unique emails in the session
-    if session.get('email') != email:
+    if session.get('email') != email and email != None:
         return jsonify({'Not in session': 'Leave at home page'}), 404
     else:
         # user is in the session, return all user info
@@ -193,7 +193,29 @@ def get_user_inventories():
             return jsonify({'Bad Request': 'User not in session'}), 403
 
 
-
+@app.route('/api/delete-inventory/<user_id>/<inventory_name>', methods=['DELETE'])
+def remove_inventory(user_id, inventory_name):
+    print(user_id, inventory_name)
+    if user_id != None and user_id != '' and inventory_name != None and inventory_name != '' and session.get('user_id') == user_id:
+        # An in session user id and inventory name was passed, try to delete
+        inventory = db_session.query(Inventory).filter(and_(Inventory.user_id == user_id, Inventory.inventory_nm == inventory_name)).first()
+        if inventory != None:
+            # to_delete = db_session.query(Inventory).filter(and_(Inventory.user_id == user_id, Inventory.inventory_nm == inventory_name)).delete(synchronize_session='fetch')
+            # print(inventory_schema.dump(to_delete))
+            db_session.delete(inventory)
+            db_session.commit()
+            return jsonify({'Accepted': f'{inventory_name} inventory was deleted'}), 204
+        else:
+            # user id and inventory not found - they do not match
+            db_session.rollback()
+            return jsonify({'Not Found': f'Inventory with user id {user_id} and name \'{inventory_name}\' was not found'}), 404
+    else:
+        if user_id == None or user_id == '':
+            return jsonify({'Not Found': 'User is empty'}), 404
+        elif session.get('user_id') != user_id:
+            return jsonify({'Unauthorized': 'This user is not in session and cannot delete and inventory'}), 403
+        else:
+            return jsonify({'Not Found': 'The inventory name is empty'}), 404
     
 
 

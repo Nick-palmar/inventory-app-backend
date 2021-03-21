@@ -204,7 +204,8 @@ def remove_inventory(user_id, inventory_name):
             # print(inventory_schema.dump(to_delete))
             db_session.delete(inventory)
             db_session.commit()
-            return jsonify({'Accepted': f'{inventory_name} inventory was deleted'}), 204
+            # note, 204 response returns no content
+            return '', 204
         else:
             # user id and inventory not found - they do not match
             db_session.rollback()

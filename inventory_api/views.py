@@ -217,6 +217,34 @@ def remove_inventory(user_id, inventory_name):
             return jsonify({'Unauthorized': 'This user is not in session and cannot delete and inventory'}), 403
         else:
             return jsonify({'Not Found': 'The inventory name is empty'}), 404
+
+
+@app.route('/api/get-all-categories', methods=['GET'])
+def get_categories():
+    inventory_name = request.args.get('inventory_name')
+    user_id = request.args.get('user_id')
+
+@app.route('/api/add-category', methods=['POST'])
+def create_category():
+    inventory_name = request.form.get('inventory_name')
+    user_id = request.form.get('user_id')
+    category_name = request.form.get('category_name')
+
+    if user_id == session.get('user_id') and user_id != None and inventory_name != '' and inventory_name != None and category_name != None:
+        # insertion in valid, try to create a category for a specific inventory
+        category = db_session.query(
+                Category.category_id, Inventory.inventory_name, User.email
+            ).filter(Category.in)
+
+    else:
+        if user_id != session.get('user_id'):
+            return jsonify({'Unauthorized': 'This user is not in session'}), 403
+        elif user_id == None:
+            return jsonify({'Bad Request': 'User Id not passed'}), 400
+        elif category_name == None:
+            return jsonify({'Bad Request': 'Category name not passed'}), 400
+        else:
+            return jsonify({'Bad Request': 'Inventory name not passed'}), 400
     
 
 

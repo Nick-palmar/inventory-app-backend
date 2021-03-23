@@ -32,6 +32,8 @@ multiple_inventory_schema = InventorySchema(many=True)
 category_schema = CategorySchema()
 multiple_category_schema = CategorySchema(many=True)
 
+print(Category.get_children())
+
 @app.route('/')
 def index():
     return "INDEX"
@@ -203,6 +205,7 @@ def remove_inventory(user_id, inventory_name):
         if inventory != None:
             # to_delete = db_session.query(Inventory).filter(and_(Inventory.user_id == user_id, Inventory.inventory_nm == inventory_name)).delete(synchronize_session='fetch')
             # print(inventory_schema.dump(to_delete))
+            #TODO: Fix on delete cascade
             db_session.delete(inventory)
             db_session.commit()
             # note, 204 response returns no content

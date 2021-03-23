@@ -6,7 +6,7 @@ from flask import request, jsonify, Response, session
 from sqlalchemy.orm import Session
 from flask_cors import CORS, cross_origin
 
-from .serializers import UserSchema, InventorySchema
+from .serializers import UserSchema, InventorySchema, CategorySchema
 
 # CORS(app, support_credentials=True)
 Base = automap_base()
@@ -29,6 +29,7 @@ metadata = MetaData(engine)
 user_schema = UserSchema()
 inventory_schema = InventorySchema()
 multiple_inventory_schema = InventorySchema(many=True)
+category_schema = CategorySchema()
 
 @app.route('/')
 def index():
@@ -158,12 +159,11 @@ def create_inventory():
                 db_session.rollback()
                 return jsonify({'Bad Request': 'Error in creating inventory'}), 400
         else:
-            if user == None and inventory != None:
-                return jsonify({'Bad Request': 'User Id and inventory were invalid'}), 400
-            elif user == None:
-                return jsonify({'Bad Request': 'User Id was not found'}), 404
-            else:
+            if inventory != None:
                 return jsonify({'Already Exists': 'Inventory already exists'}), 200
+            # user does not exist
+            else:
+                return jsonify({'Bad Request': 'User Id was not found'}), 404
 
     else:
         if current_user_id == None:
@@ -224,24 +224,69 @@ def get_categories():
     inventory_name = request.args.get('inventory_name')
     user_id = request.args.get('user_id')
 
+    if session.get('user_id') == user_id and user_id != None and inventory_name != None and inventory_name != '':
+        # query the data for all categories in an inventory 
+        
+    else:
+        # handle errors in request params
+        if user_id == None:
+            return jsonify({'Bad Request': 'User ID DNE'}), 400
+        elif user_id != session.get('user_id'):
+            return jsonify({'Unauthorized': 'This user is not in session'}), 403
+        else:
+            return jsonify({'Bad Request': 'Inventory name is empty'}), 400
+
 @app.route('/api/add-category', methods=['POST'])
 def create_category():
     inventory_name = request.form.get('inventory_name')
     user_id = request.form.get('user_id')
     category_name = request.form.get('category_name')
 
-    if user_id == session.get('user_id') and user_id != None and inventory_name != '' and inventory_name != None and category_name != None:
-        # insertion in valid, try to create a category for a specific inventory
+    if user_id == session.get('user_id') and user_id != None and category_name != '' and inventory_name != None and category_name != None:
+        # query the category table with the given parameters to find if the categoru already exists
         category = db_session.query(
-                Category.category_id, Inventory.inventory_name, User.email
-            ).filter(Category.in)
+                Category
+            ).join(
+                Inventory, Inventory.inventory_id==Category.inventory_id
+            ).join(
+                User, User.user_id==Inventory.user_id
+            ).filter(and_(User.user_id==user_id, 
+            Inventory.inventory_nm==inventory_name,
+            Category.category_nm==category_name)).first()
+        
+        # query the inventories to get the whole inventory object for said user and inventory name
+        inventory = db_session.query(
+                Inventory
+            ).join(
+                User, User.user_id==Inventory.user_id
+            ).filter(and_(User.user_id==user_id,
+            Inventory.inventory_nm == inventory_name)).first()
+        
+        if category == None and inventory != None:
+            try:
+                # no category was found, try to insert a new category
+                new_category = Category(inventory_id=inventory.inventory_id, category_nm=category_name)
+                db_session.add(new_category)
+                db_session.commit()
+                serialized_category = category_schema.dump(new_category)
+                return jsonify(serialized_category), 201
+            except:
+                # invalid entry occured due to table constraints
+                db_session.rollback()
+                return jsonify({'Bad Request': 'Error in creating category'}), 400
+        else:
+            if category != None:
+                return jsonify({'Already exists': 'Category already exists'}), 200
+            # no inventory exists
+            else:
+                return jsonify({'Bad Request': 'Inventory does not exist'}), 400
 
     else:
         if user_id != session.get('user_id'):
             return jsonify({'Unauthorized': 'This user is not in session'}), 403
         elif user_id == None:
             return jsonify({'Bad Request': 'User Id not passed'}), 400
-        elif category_name == None:
+        elif category_name == None or category_name == '':
             return jsonify({'Bad Request': 'Category name not passed'}), 400
         else:
             return jsonify({'Bad Request': 'Inventory name not passed'}), 400

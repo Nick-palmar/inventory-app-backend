@@ -13,3 +13,7 @@ class UserSchema(ma.Schema):
 class InventorySchema(ma.Schema):
     class Meta:
         fields = ('inventory_id', 'user_id', 'inventory_nm', 'created_at')
+
+class CategorySchema(ma.Schema):
+    class Meta:
+        fields = ('category_id', 'inventory_id', 'category_nm', 'created_at')

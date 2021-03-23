@@ -29,7 +29,7 @@ CREATE TABLE Category (
 
 CREATE TABLE Product (
     product_id BIGSERIAL PRIMARY KEY,
-    category_id INT REFERENCES Category (category_id ON DELETE CASCADE,
+    category_id INT REFERENCES Category (category_id) ON DELETE CASCADE,
     product_nm VARCHAR(80) NOT NULL,
     product_type VARCHAR(50) NOT NULL,
     quantity INT NOT NULL,

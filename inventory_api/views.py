@@ -30,6 +30,7 @@ user_schema = UserSchema()
 inventory_schema = InventorySchema()
 multiple_inventory_schema = InventorySchema(many=True)
 category_schema = CategorySchema()
+multiple_category_schema = CategorySchema(many=True)
 
 @app.route('/')
 def index():
@@ -181,7 +182,7 @@ def get_user_inventories():
     if user_id != None and session.get('user_id') == user_id:
         user_inventories = db_session.query(Inventory).filter(Inventory.user_id == user_id).all()
 
-        if user_inventories != None:
+        if user_inventories != None and user_inventories != []:
             serialized_inventories = multiple_inventory_schema.dump(user_inventories)
             return jsonify(serialized_inventories), 200
         else:
@@ -226,7 +227,22 @@ def get_categories():
 
     if session.get('user_id') == user_id and user_id != None and inventory_name != None and inventory_name != '':
         # query the data for all categories in an inventory 
+        all_categories = db_session.query(
+                Category
+            ).join(
+                Inventory, Inventory.inventory_id==Category.inventory_id
+            ).join(
+                User, User.user_id==Inventory.user_id
+            ).filter(and_(User.user_id==user_id, 
+                Inventory.inventory_nm == inventory_name)).all()
+        # print(all_categories)
         
+        if all_categories != None and all_categories != []:
+            serialized_categories = multiple_category_schema.dump(all_categories)
+            return jsonify(serialized_categories), 200
+        else:
+            # no categories are present
+            return jsonify({'Not found': 'No category found'}), 200
     else:
         # handle errors in request params
         if user_id == None:
@@ -235,6 +251,7 @@ def get_categories():
             return jsonify({'Unauthorized': 'This user is not in session'}), 403
         else:
             return jsonify({'Bad Request': 'Inventory name is empty'}), 400
+
 
 @app.route('/api/add-category', methods=['POST'])
 def create_category():
@@ -251,8 +268,8 @@ def create_category():
             ).join(
                 User, User.user_id==Inventory.user_id
             ).filter(and_(User.user_id==user_id, 
-            Inventory.inventory_nm==inventory_name,
-            Category.category_nm==category_name)).first()
+                Inventory.inventory_nm==inventory_name,
+                Category.category_nm==category_name)).first()
         
         # query the inventories to get the whole inventory object for said user and inventory name
         inventory = db_session.query(
@@ -260,7 +277,7 @@ def create_category():
             ).join(
                 User, User.user_id==Inventory.user_id
             ).filter(and_(User.user_id==user_id,
-            Inventory.inventory_nm == inventory_name)).first()
+                Inventory.inventory_nm == inventory_name)).first()
         
         if category == None and inventory != None:
             try:

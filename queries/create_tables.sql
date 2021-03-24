@@ -15,7 +15,7 @@ CREATE TABLE Users (
 
 CREATE TABLE Inventory (
     inventory_id BIGSERIAL PRIMARY KEY,
-    user_id INT,
+    user_id INT NOT NULL,
     inventory_nm VARCHAR(30) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_user
@@ -26,7 +26,7 @@ CREATE TABLE Inventory (
 
 CREATE TABLE Category (
     category_id BIGSERIAL PRIMARY KEY,
-    inventory_id INT,
+    inventory_id INT NOT NULL,
     category_nm VARCHAR(30) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_inventory
@@ -37,7 +37,7 @@ CREATE TABLE Category (
 
 CREATE TABLE Product (
     product_id BIGSERIAL PRIMARY KEY,
-    category_id INT,
+    category_id INT NOT NULL,
     product_nm VARCHAR(80) NOT NULL,
     product_type VARCHAR(50) NOT NULL,
     quantity INT NOT NULL,
@@ -53,7 +53,7 @@ CREATE TABLE Product (
 
 CREATE TABLE Attribute (
     attribute_id BIGSERIAL PRIMARY KEY,
-    product_id INT,
+    product_id INT NOT NULL,
     attr_nm TEXT NOT NULL,
     attr_value TEXT NOT NULL,
     CONSTRAINT fk_product

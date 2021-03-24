@@ -32,7 +32,7 @@ multiple_inventory_schema = InventorySchema(many=True)
 category_schema = CategorySchema()
 multiple_category_schema = CategorySchema(many=True)
 
-print(Category.get_children())
+# print(Category.get_children())
 
 @app.route('/')
 def index():
@@ -58,7 +58,7 @@ def validate_entire_entry(object, *all_fields, **entered_values) -> bool:
 def sign_up():
     user_name = request.form['user_name']
     email = request.form['email']
-    print(email)
+    print(email, user_name)
 
     # make sure that the user DNE
     user = db_session.query(User).filter(User.email == email).first()

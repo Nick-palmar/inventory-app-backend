@@ -74,7 +74,8 @@ def sign_up():
             session['email'] = user.email 
             session['user_id'] = str(user.user_id)
         
-        return jsonify({'Already Exists': f'{user.email} already exists in db'}), 200
+        serialized_user = user_schema.dump(user)
+        return jsonify(serialized_user), 200
 
     # user is either invalid or does not yet exist
     if user_name != None and email != None:

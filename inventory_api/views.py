@@ -1,7 +1,7 @@
 from inventory_api import app, engine
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy import *
-from flask import request, jsonify, Response, session
+from flask import request, jsonify, Response, session, send_from_directory
 # print(type(session))
 from sqlalchemy.orm import Session
 from flask_cors import CORS, cross_origin
@@ -34,9 +34,12 @@ multiple_category_schema = CategorySchema(many=True)
 
 # print(Category.get_children())
 
-@app.route('/')
-def index():
-    return "INDEX"
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path>')
+def serve(path):
+    print('Flask: ' + path)
+    return send_from_directory(app.static_folder, 'index.html')
 
 def validate_entire_entry(object, *all_fields, **entered_values) -> bool:
     """ Ensure that all fields are matching with a database or session

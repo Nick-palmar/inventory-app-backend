@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine
 import logging
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='build', static_url_path='')
 # app.run(debug=True)
 # logging.basicConfig(level=logging.DEBUG)
 app.config.from_object(Config)

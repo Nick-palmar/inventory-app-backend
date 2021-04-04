@@ -8,9 +8,10 @@ app = Flask(__name__)
 # app.run(debug=True)
 # logging.basicConfig(level=logging.DEBUG)
 app.config.from_object(Config)
-print(app.config['SQLALCHEMY_DATABASE_URI'])
-sys.stdout.flush()
-DB_URI = app.config['SQLALCHEMY_DATABASE_URI']
+# change postgres -> postgresql to allow for heroku and sqlalchemy inegration
+DB_URI = app.config['SQLALCHEMY_DATABASE_URI'].replace("://", "ql://", 1)
+print(DB_URI)
+# sys.stdout.flush()
 engine = create_engine(DB_URI)
 
 import inventory_api.views

@@ -9,6 +9,7 @@ app = Flask(__name__)
 # logging.basicConfig(level=logging.DEBUG)
 app.config.from_object(Config)
 print(app.config['SQLALCHEMY_DATABASE_URI'])
+sys.stdout.flush()
 DB_URI = app.config['SQLALCHEMY_DATABASE_URI']
 engine = create_engine(DB_URI)
 

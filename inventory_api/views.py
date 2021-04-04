@@ -5,6 +5,7 @@ from flask import request, jsonify, Response, session, send_from_directory
 # print(type(session))
 from sqlalchemy.orm import Session
 from flask_cors import CORS, cross_origin
+import os
 
 from .serializers import UserSchema, InventorySchema, CategorySchema
 
@@ -35,11 +36,21 @@ multiple_category_schema = CategorySchema(many=True)
 # print(Category.get_children())
 
 
+# @app.route('/', defaults={'path': ''})
+# @app.route('/<path>')
+# def serve(path):
+#     print('Flask: ' + path)
+#     return send_from_directory(app.static_folder, 'index.html')
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path>')
 def serve(path):
-    print('Flask: ' + path)
-    return send_from_directory(app.static_folder, 'index.html')
+    path_dir = os.path.abspath("build") 
+    print(path_dir)
+    if path != "" and os.path.exists(os.path.join(path_dir, path)):
+        return send_from_directory(os.path.join(path_dir), path)
+    else:
+        return send_from_directory(os.path.join(path_dir),'index.html')
 
 def validate_entire_entry(object, *all_fields, **entered_values) -> bool:
     """ Ensure that all fields are matching with a database or session

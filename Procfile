@@ -1,1 +1,1 @@
-web: gunicorn app:app
+web: gunicorn inventory_api/__init__:app
